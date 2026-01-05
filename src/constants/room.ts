@@ -35,7 +35,7 @@ export const DEFAULT_ROOM_SETTINGS = {
       suicideJoker: false,
     },
     debug: {
-      enable: false,
+      enable: true,
       reveal: {
         opponent: {
           deck: true,
