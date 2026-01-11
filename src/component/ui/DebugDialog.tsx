@@ -11,6 +11,8 @@ import { useSelectEffect } from '@/hooks/select-effect';
 import { useOverclockEffect } from '@/hooks/overclock-effect';
 import { useStatusChange } from '@/hooks/status-change';
 import { LocalStorageHelper } from '@/service/local-storage';
+import { Button } from '../interface/button';
+import master from '@/submodule/suit/catalog/catalog';
 
 export const DebugDialog = () => {
   const { send } = useWebSocketGame();
@@ -61,6 +63,15 @@ export const DebugDialog = () => {
   };
 
   const handleDebugDriveButtonClick = () => {
+    const card =
+      master.get(debugDriveId) ||
+      master.values().find(catalog => catalog.name.includes(debugDriveId));
+    if (card) {
+      debugDrive(card.id);
+    }
+  };
+
+  const debugDrive = (targetUnitId: string) => {
     send({
       action: {
         handler: 'core',
@@ -69,12 +80,21 @@ export const DebugDialog = () => {
       payload: {
         type: 'DebugDrive',
         player: LocalStorageHelper.playerId(),
-        catalogId: debugDriveId,
+        catalogId: targetUnitId,
       },
     });
   };
 
   const handleDebugMakeButtonClick = () => {
+    const card =
+      master.get(debugMakeId) ||
+      master.values().find(catalog => catalog.name.includes(debugMakeId));
+    if (card) {
+      debugMake(card.id);
+    }
+  };
+
+  const debugMake = (targetCardId: string) => {
     send({
       action: {
         handler: 'core',
@@ -83,7 +103,7 @@ export const DebugDialog = () => {
       payload: {
         type: 'DebugMake',
         player: LocalStorageHelper.playerId(),
-        catalogId: debugMakeId,
+        catalogId: targetCardId,
       },
     });
   };
@@ -141,7 +161,7 @@ export const DebugDialog = () => {
                 value={debugDriveId}
                 onChange={e => setDebugDriveId(e.target.value)}
                 className="w-32 px-2 py-1 bg-slate-700 rounded text-white"
-                placeholder="DebugDrive ID"
+                placeholder="IDかカード名を入力…"
               />
               <button
                 onClick={handleDebugDriveButtonClick}
@@ -158,7 +178,7 @@ export const DebugDialog = () => {
                 value={debugMakeId}
                 onChange={e => setDebugMakeId(e.target.value)}
                 className="w-32 px-2 py-1 bg-slate-700 rounded text-white"
-                placeholder="DebugMake ID"
+                placeholder="IDかカード名を入力…"
               />
               <button
                 onClick={handleDebugMakeButtonClick}
@@ -167,6 +187,47 @@ export const DebugDialog = () => {
                 DebugMake送信
               </button>
             </div>
+            <details>
+              <div
+                className={`flex flex-col justify-center border-t ${colorTable.ui.border} pt-2 mt-2 gap-1`}
+              >
+                <p className="text-center font-bold">汎用ユニット召喚</p>
+                <div className={`flex flex-col border-t ${colorTable.ui.border} pt-1`}>
+                  <p className="text-center text-xs">特殊召喚</p>
+                  <div className="flex gap-2">
+                    <Button className="bg-green-500 w-1/2" onClick={() => debugDrive('2-0-324')}>
+                      デッキから
+                    </Button>
+                    <Button className="w-1/2" onClick={() => debugDrive('2-1-115')}>
+                      捨札から
+                    </Button>
+                  </div>
+                </div>
+                <div className={`flex flex-col border-t ${colorTable.ui.border} pt-1`}>
+                  <p className="text-center text-xs">基本BP</p>
+                  <div className="flex gap-2">
+                    <Button className="bg-green-500 w-1/2" onClick={() => debugDrive('2-0-119')}>
+                      下げる
+                    </Button>
+                    <Button className="w-1/2" onClick={() => debugDrive('2-3-018')}>
+                      上げる
+                    </Button>
+                  </div>
+                </div>
+                <div className={`flex flex-col border-t ${colorTable.ui.border} pt-1`}>
+                  <p className="text-center text-xs">BP</p>
+                  <div className="flex gap-2">
+                    <Button className="bg-green-500 w-1/2" onClick={() => debugDrive('PR-083')}>
+                      下げる
+                    </Button>
+                    <Button className="w-1/2" onClick={() => debugDrive('2-1-020')}>
+                      上げる
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </details>
+            <div className={`border-t ${colorTable.ui.border} pt-2 mt-2`}></div>
             <button
               onClick={handleDrawButtonClick}
               className={`px-3 py-1 rounded ${colorTable.ui.border} bg-slate-600 hover:bg-slate-500 transition-colors`}

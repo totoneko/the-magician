@@ -28,17 +28,10 @@ export const MyArea = () => {
   useMyArea();
 
   return (
-    <div className="flex-col p-4 min-h-[250px]">
-      {/* 自分の情報 */}
-      <div
-        className={`flex justify-between items-center p-2 ${colorTable.ui.playerInfoBackground} rounded-lg mb-4`}
-      >
-        <div className="player-identity">
-          <div className="font-bold text-lg">{self?.name || ''}</div>
-          <div className={`text-sm ${colorTable.ui.text.secondary}`}>あなた</div>
-        </div>
-
-        <div className="flex gap-4 items-center">
+    <div className="flex justify-center p-4 min-h-[250px]">
+      <div className="flex items-end gap-8">
+        {/* Left column: Deck & Trash */}
+        <div className="flex flex-col gap-3">
           {deck && (
             <CardsCountView count={(deck ?? []).length}>
               <div
@@ -50,20 +43,33 @@ export const MyArea = () => {
             </CardsCountView>
           )}
           <MyTrash />
-          {self?.cp && <CPView max={self.cp.max} current={self.cp.current} />}
-          <PurpleGaugeView max={5} current={self?.purple} />
-          <MyTriggerZone />
         </div>
 
-        <div className="flex flex-col gap-2">
-          {self?.life && <LifeView current={self.life.current} max={self.life.max} />}
+        {/* Middle column: CPView+PurpleGauge, MyTriggerZone, HandArea */}
+        <div className="flex flex-col gap-3">
+          <div className="flex justify-between items-end">
+            <div className="flex flex-col gap-2">
+              {self?.cp && <CPView max={self.cp.max} current={self.cp.current} />}
+              <PurpleGaugeView max={5} current={self?.purple} />
+            </div>
+            <MyTriggerZone />
+          </div>
+          <HandArea playerId={playerId} />
         </div>
-      </div>
 
-      {/* 自分の手札エリア */}
-      <div className="flex justify-center items-end">
-        <HandArea playerId={playerId} />
-        <JokerArea />
+        {/* Right column: Player Identity & JokerArea */}
+        <div className="flex flex-col gap-3">
+          <div className="player-identity">
+            <div className="font-bold text-lg whitespace-nowrap text-ellipsis">
+              {self?.name || ''}
+            </div>
+            <div className={`text-sm ${colorTable.ui.text.secondary}`}>あなた</div>
+            <div className="flex flex-col gap-2">
+              {self?.life && <LifeView current={self.life.current} max={self.life.max} />}
+            </div>
+          </div>
+          <JokerArea />
+        </div>
       </div>
     </div>
   );

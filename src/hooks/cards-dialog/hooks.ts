@@ -77,6 +77,14 @@ export const useCardsDialog = (): CardsDialogContextType & {
     count: number,
     options?: { timeLimit?: number }
   ): Promise<string[]> => {
+    // 既存のダイアログが開いている場合、先にクリーンアップ
+    // （closeCardsDialogとの連続呼び出しでバッチ処理されても正しく動作するよう明示的に処理）
+    if (context.resolvePromise) {
+      context.resolvePromise([]);
+    }
+    context.setResolvePromise(null);
+    context.setTimeLimit(null);
+
     context.setSelection([]);
     context.setCards(cards);
     context.setDialogTitle(title);
@@ -95,6 +103,9 @@ export const useCardsDialog = (): CardsDialogContextType & {
     if (context.resolvePromise) {
       context.resolvePromise(result ?? [...context.selection]);
       context.setResolvePromise(null);
+    }
+    // resolvePromiseがnullでもダイアログを閉じる（バッチ処理で状態が不整合になった場合の対応）
+    if (context.cards !== undefined) {
       context.setCards(undefined);
       context.setSelection([]);
     }

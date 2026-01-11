@@ -25,6 +25,38 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* fadeIn animation for overlay */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* expand animation for circle */
+@keyframes expand {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
+
+/* textFadeIn animation for text container */
+@keyframes textFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* Card highlight animation */
 @keyframes pulse-border {
   0% {

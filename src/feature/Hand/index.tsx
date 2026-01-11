@@ -13,15 +13,16 @@ export const HandArea = ({ playerId }: HandAreaProps) => {
   const hand = (useHand(playerId) ?? []) as ICard[];
 
   // Calculate the width needed for all placeholder slots
+  // w-28 = 7rem = 112px, gap-2 = 0.5rem = 8px
   const containerWidth = useMemo(() => {
-    const cardWidth = 116;
-    const gapWidth = 8;
+    const cardWidth = 112; // Tailwind w-28 = 7rem = 112px
+    const gapWidth = 8; // Tailwind gap-2 = 0.5rem = 8px
     const totalWidth = cardWidth * rule.player.max.hand + gapWidth * (rule.player.max.hand - 1);
     return totalWidth;
   }, [rule.player.max.hand]);
 
   return (
-    <div className="relative" style={{ minWidth: `${containerWidth}px` }}>
+    <div className="relative" style={{ width: `${containerWidth}px` }}>
       {/* Mulligan UI */}
       <MulliganView />
       {/* Placeholders - always display for all slots - left aligned */}

@@ -761,7 +761,7 @@ export const DeckBuilder = ({ implementedIds }: DeckBuilderProps) => {
         ref={deckViewRef}
         className="w-full flex flex-col items-center justify-center fixed top-0 left-0 right-0 z-10 bg-gray-800 bg-opacity-90 p-4 shadow-lg"
       >
-        <div className="w-full overflow-x-auto px-4 text-center">
+        <div className="w-full overflow-x-auto px-4">
           <div className="inline-block">
             <DeckView
               deck={deck}

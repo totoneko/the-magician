@@ -3,6 +3,7 @@ import { WebSocketProvider } from './websocket';
 import { SystemContextProvider } from './system';
 import { AttackAnimationProvider } from './attack-animation';
 import { SoundManagerV2Provider } from './soundV2';
+import { ErrorOverlayProvider } from './error-overlay';
 
 interface Props {
   children: ReactNode;
@@ -10,12 +11,14 @@ interface Props {
 
 export const GlobalContextProvider = ({ children }: Props) => {
   return (
-    <WebSocketProvider>
-      <SystemContextProvider>
-        <AttackAnimationProvider>
-          <SoundManagerV2Provider>{children}</SoundManagerV2Provider>
-        </AttackAnimationProvider>
-      </SystemContextProvider>
-    </WebSocketProvider>
+    <ErrorOverlayProvider>
+      <WebSocketProvider>
+        <SystemContextProvider>
+          <AttackAnimationProvider>
+            <SoundManagerV2Provider>{children}</SoundManagerV2Provider>
+          </AttackAnimationProvider>
+        </SystemContextProvider>
+      </WebSocketProvider>
+    </ErrorOverlayProvider>
   );
 };

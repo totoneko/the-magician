@@ -24,7 +24,7 @@ const getRemainTime = (
 
 const CircularTimer = () => {
   const { startDate, initialTime, isRunning } = useTimer();
-  const { operable } = useSystemContext();
+  const { operable, setOperable } = useSystemContext();
   const { game, players } = useGameStore();
 
   const turnPlayer = useMemo(
@@ -114,7 +114,8 @@ const CircularTimer = () => {
         type: 'TurnEnd',
       },
     });
-  }, [send]);
+    setOperable(false);
+  }, [send, setOperable]);
 
   return (
     <div className="flex flex-col items-center justify-center">

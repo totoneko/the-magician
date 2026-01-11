@@ -18,6 +18,7 @@ import { useChoicePanel } from '@/feature/ChoicePanel/context';
 import { useStatusChange } from '../status-change';
 import { useUnitPosition } from '../unit-position';
 import { useSelectEffect } from '../select-effect';
+import { useTurnChangeEffect } from '../turn-change-effect';
 
 export const useHandler = () => {
   const { getUnitCenterPosition: getUnitPosition } = useUnitPosition();
@@ -40,6 +41,7 @@ export const useHandler = () => {
   const { setOptions, clear, setOnSelectCallback } = useChoicePanel();
   const { addStatusChange } = useStatusChange();
   const { addTargetUnit } = useSelectEffect();
+  const { showTurnChangeEffect } = useTurnChangeEffect();
 
   // 選択肢選択をPromiseで待つ
   const handleOptionSelection = (): Promise<string | null> => {
@@ -95,12 +97,11 @@ export const useHandler = () => {
 
       // カード効果選択
       case 'Choices': {
-        closeCardsDialog();
-
         const { choices } = payload;
 
         switch (choices.type) {
           case 'option': {
+            closeCardsDialog();
             setOptions(
               choices.items.map((item: { id: string; description: string }) => ({
                 id: item.id,
@@ -129,6 +130,7 @@ export const useHandler = () => {
 
           case 'card': {
             if (payload.player !== LocalStorageHelper.playerId()) return;
+            closeCardsDialog();
             const response = await openCardsSelector(choices.items, choices.title, choices.count, {
               timeLimit: 10,
             });
@@ -138,6 +140,7 @@ export const useHandler = () => {
 
           case 'intercept': {
             if (payload.player !== LocalStorageHelper.playerId()) return;
+            closeCardsDialog();
             const selectedCard = await handleInterceptSelection(choices.items);
             choose({
               promptId: payload.promptId,
@@ -148,6 +151,7 @@ export const useHandler = () => {
 
           case 'unit': {
             if (payload.player !== LocalStorageHelper.playerId()) return;
+            closeCardsDialog();
             const selectedUnit = await handleUnitSelection(
               choices.items,
               choices.title,
@@ -163,6 +167,7 @@ export const useHandler = () => {
 
           case 'block': {
             if (payload.player !== LocalStorageHelper.playerId()) return;
+            closeCardsDialog();
             const selectedUnit = await handleUnitSelection(
               choices.items,
               choices.title,
@@ -293,6 +298,13 @@ export const useHandler = () => {
             break;
           }
         }
+        break;
+      }
+      case 'TurnChange': {
+        const isMyTurn = payload.player === LocalStorageHelper.playerId();
+        play('turnchange');
+        showTurnChangeEffect({ turn: payload.isFirst ? 'first' : 'second' });
+        if (!isMyTurn) setOperable(false);
         break;
       }
 

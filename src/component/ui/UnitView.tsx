@@ -22,6 +22,7 @@ import { useOverclockEffect } from '@/hooks/overclock-effect';
 import { useStatusChange } from '@/hooks/status-change';
 import master from '@/submodule/suit/catalog/catalog';
 import { getImageUrl } from '@/helper/image';
+import { useLongPress } from '@/hooks/use-long-press';
 
 interface UnitViewProps {
   unit: IUnit;
@@ -32,7 +33,8 @@ interface UnitViewProps {
 const UnitViewComponent = ({ unit, isOwnUnit = false }: UnitViewProps) => {
   const { setActiveUnit, candidate, animationUnit, setAnimationUnit, activeUnit } =
     useUnitSelection();
-  const { setSelectedCard, setDetailCard, operable, activeCard } = useSystemContext();
+  const { setSelectedCard, setDetailCard, setDetailPosition, operable, activeCard } =
+    useSystemContext();
   const unitRef = useRef<HTMLDivElement>(null);
   const { registerUnitRef } = useUnitPosition();
   const { targetUnitIds, removeTargetUnit } = useSelectEffect();
@@ -78,8 +80,8 @@ const UnitViewComponent = ({ unit, isOwnUnit = false }: UnitViewProps) => {
     disabled: !isOwnUnit || !operable || !canEvolve,
   });
 
-  // Handle unit click to show action buttons
-  const handleUnitClick = (e: React.MouseEvent | React.TouchEvent) => {
+  // Handle unit click to show action buttons (desktop only)
+  const handleUnitClick = (e: React.MouseEvent) => {
     // Prevent event if drag is in progress
     if (e.defaultPrevented) return;
 
@@ -87,8 +89,27 @@ const UnitViewComponent = ({ unit, isOwnUnit = false }: UnitViewProps) => {
       setActiveUnit(prev => (prev?.id !== unit.id ? unit : undefined));
     }
     setSelectedCard(prev => (prev?.catalogId === unit.catalogId ? undefined : unit));
+    // Desktop: clicking shows detail card
     setDetailCard(prev => (prev?.catalogId === unit.catalogId ? undefined : unit));
   };
+
+  // Long press handlers for touch devices
+  const longPressHandlers = useLongPress({
+    onLongPress: () => {
+      // Long press shows detail card
+      setDetailCard(unit);
+      setDetailPosition({ x: 100, y: 100 });
+    },
+    onShortPress: () => {
+      // Short press only handles action buttons and selection, no detail card
+      if (isOwnUnit && !candidate && operable) {
+        setActiveUnit(prev => (prev?.id !== unit.id ? unit : undefined));
+      }
+      setSelectedCard(prev => (prev?.catalogId === unit.catalogId ? undefined : unit));
+    },
+    delay: 150, // Match dnd-kit TouchSensor delay
+    tolerance: 5, // Match dnd-kit TouchSensor tolerance
+  });
 
   return (
     <div className="flex flex-col items-center">
@@ -117,7 +138,13 @@ const UnitViewComponent = ({ unit, isOwnUnit = false }: UnitViewProps) => {
             setDroppableRef(node);
           }}
           className="absolute inset-0 z-0 dnd-droppable"
-          onClick={handleUnitClick}
+          onClick={e => {
+            // Only handle click on desktop (non-touch devices)
+            if (!('ontouchstart' in window)) {
+              handleUnitClick(e);
+            }
+          }}
+          {...longPressHandlers}
           style={useUnitAttackAnimationStyle(unit.id)}
         >
           {/* Animation effect layers (highest z-index) */}

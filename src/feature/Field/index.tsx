@@ -12,7 +12,7 @@ export const Field = ({ playerId, isOwnField = false }: FieldProps) => {
   const { activeUnit, setActiveUnit } = useUnitSelection();
 
   return (
-    <div className="relative flex justify-center items-center gap-4 h-43">
+    <div className="relative flex justify-center items-center gap-4 h-42">
       {/* 画面カバー: ボタン表示中のみ有効 */}
       {activeUnit && (
         <div

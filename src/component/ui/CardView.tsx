@@ -4,6 +4,7 @@ import { IAtom, ICard } from '@/submodule/suit/types';
 import { useSystemContext } from '@/hooks/system/hooks';
 import { useCallback, MouseEvent, useMemo } from 'react';
 import { getImageUrl } from '@/helper/image';
+import { useLongPress } from '@/hooks/use-long-press';
 
 interface Props {
   card: IAtom;
@@ -80,6 +81,30 @@ export const CardView = ({
     [card, setDetailCard, setDetailPosition]
   );
 
+  // Long press handlers for touch devices
+  const longPressHandlers = useLongPress({
+    onLongPress: () => {
+      if (isICard(card)) {
+        setDetailCard(card);
+        setDetailPosition({ x: 100, y: 100 });
+      }
+    },
+    onShortPress: () => {
+      // Short press should only trigger selection, not detail view
+      if (isICard(card)) {
+        if (!isInDeckBuilder) {
+          setSelectedCard(prev => (prev?.catalogId === card.catalogId ? undefined : card));
+        } else {
+          setSelectedCard(prev => (prev?.catalogId === card.catalogId ? undefined : card));
+        }
+      }
+      // Also call the onClick prop if provided (for CardsDialog, etc.)
+      onClick?.();
+    },
+    delay: 150, // Match dnd-kit TouchSensor delay
+    tolerance: 5, // Match dnd-kit TouchSensor tolerance
+  });
+
   const reduced = useMemo(() => {
     return (
       (card as ICard).delta
@@ -99,17 +124,14 @@ export const CardView = ({
           backgroundSize: 'cover',
         }}
         onClick={e => {
-          // Only handle click if not being dragged
-          if (!e.defaultPrevented) {
+          // Only handle click if not being dragged and not on touch device
+          if (!e.defaultPrevented && !('ontouchstart' in window)) {
             handleCardClick();
             onClick?.(e);
           }
         }}
         onContextMenu={handleContextMenu}
-        onTouchStart={e => {
-          // Prevent context menu on long press for touch devices
-          e.preventDefault();
-        }}
+        {...longPressHandlers}
       >
         <div
           className={`w-full h-full rounded flex flex-col text-xs shadow-lg relative cursor-pointer`}

@@ -12,6 +12,7 @@ import { SelectEffectProvider } from '../select-effect';
 import { OverclockEffectProvider } from '../overclock-effect';
 import { StatusChangeProvider } from '../status-change';
 import { UnitPositionProvider } from '../unit-position';
+import { TurnChangeEffectProvider } from '../turn-change-effect';
 
 interface Props {
   children: ReactNode;
@@ -31,7 +32,9 @@ export const GameContextProvider = ({ children }: Props) => {
                       <SelectEffectProvider>
                         <OverclockEffectProvider>
                           <StatusChangeProvider>
-                            <UnitPositionProvider>{children}</UnitPositionProvider>
+                            <UnitPositionProvider>
+                              <TurnChangeEffectProvider>{children}</TurnChangeEffectProvider>
+                            </UnitPositionProvider>
                           </StatusChangeProvider>
                         </OverclockEffectProvider>
                       </SelectEffectProvider>

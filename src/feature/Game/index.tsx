@@ -33,12 +33,18 @@ import { MyFieldWrapper } from '../MyFieldWrapper';
 import { ICard } from '@/submodule/suit/types';
 import { Timer } from '../Timer';
 import { LocalStorageHelper } from '@/service/local-storage';
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { UnitSelectionOverlay } from '@/component/ui/UnitSelectionOverlay';
+import { webSocketService } from '@/service/websocket';
 import { ChoicePanel } from '@/feature/ChoicePanel';
 import { PurpleGaugeView } from '@/component/ui/purpleGaugeView';
 import { CardView } from '@/component/ui/CardView';
 import { JokerGauge } from '@/component/ui/JokerGauge';
+import { Button } from '@/component/interface/button';
+import { LoadingOverlay } from '@/component/ui/LoadingOverlay';
+import { ErrorOverlay } from '@/component/ui/ErrorOverlay';
+import { useErrorOverlay } from '@/hooks/error-overlay';
+import { TurnChangeEffect } from '@/component/ui/TurnChangeEffect';
 
 interface RoomProps {
   id: string;
@@ -48,18 +54,22 @@ export const Game = ({ id }: RoomProps) => {
   useGameComponentHook({ id });
   const { openCardsDialog } = useCardsDialog();
   const { cursorCollisionSize } = useSystemContext();
+  const { state: errorState, hideOverlay } = useErrorOverlay();
+
+  // 相手の切断状態を管理
+  const [isWaitingReconnect, setIsWaitingReconnect] = useState(false);
 
   // Get current player ID
   const currentPlayerId = LocalStorageHelper.playerId();
 
   const rule = useRule();
   const playerIds = Object.keys(usePlayers() ?? {});
-  const oppenentId =
+  const opponentId =
     useMemo(
       () => playerIds.find((id: string) => id !== currentPlayerId),
       [playerIds, currentPlayerId]
     ) ?? '';
-  const opponent = usePlayer(oppenentId);
+  const opponent = usePlayer(opponentId);
 
   const sensors = useSensors(
     // Primary sensor for desktop and touch devices
@@ -104,6 +114,22 @@ export const Game = ({ id }: RoomProps) => {
     });
   };
 
+  const screenRef = useRef<HTMLDivElement>(null);
+  const handleFullScreen = useCallback(() => {
+    screenRef.current?.requestFullscreen();
+  }, []);
+
+  const isMatching = useMemo(() => {
+    return opponentId == '';
+  }, [opponentId]);
+
+  // 切断ハンドラーを設定
+  useEffect(() => {
+    webSocketService.setDisconnectHandler(isWaitingReconnect => {
+      setIsWaitingReconnect(isWaitingReconnect);
+    });
+  }, []);
+
   return (
     <DndContext
       sensors={sensors}
@@ -112,6 +138,7 @@ export const Game = ({ id }: RoomProps) => {
     >
       <div
         className={`flex h-screen ${colorTable.ui.background} ${colorTable.ui.text.primary} relative overflow-hidden select-none dnd-game-container`}
+        ref={screenRef}
       >
         {/* カード詳細ウィンドウ */}
         <CardDetailWindow x={30} y={530} />
@@ -124,23 +151,57 @@ export const Game = ({ id }: RoomProps) => {
 
         {/* カード使用エフェクト */}
         <CardUsageEffect />
+        <TurnChangeEffect />
 
         {/* 選択オーバーレイ */}
         <InterceptSelectionOverlay />
         <UnitSelectionOverlay />
         <ChoicePanel />
 
+        {/* ロード */}
+        <LoadingOverlay
+          isOpen={isMatching || isWaitingReconnect}
+          message={isMatching ? '入室を待機中…' : '復帰を待機中…'}
+          subMessage={
+            isMatching ? `RoomID: ${id} | 対戦相手の入室を待っています` : '対戦相手が切断しました'
+          }
+        />
+
+        {/* エラーオーバーレイ */}
+        <ErrorOverlay
+          isOpen={errorState.isOpen}
+          type={errorState.type}
+          title={errorState.title}
+          message={errorState.message}
+          confirmButtonText={errorState.confirmButtonText}
+          onConfirm={() => {
+            if (errorState.onConfirmCallback) {
+              errorState.onConfirmCallback();
+            }
+            hideOverlay();
+          }}
+          autoClose={errorState.autoClose}
+          autoCloseDelay={errorState.autoCloseDelay}
+        />
+
         {/* メインゲームコンテナ */}
-        <div className="flex flex-col w-full h-full p-4">
+        <div className="flex flex-col w-full h-full xl:p-4">
           {/* 対戦相手エリア */}
-          <div className={`flex-col p-4 border-b ${colorTable.ui.border}`}>
+          <div className={`flex-col xl:p-4 border-b ${colorTable.ui.border}`}>
             {/* 対戦相手情報 */}
             <div
-              className={`flex items-center justify-between p-2 ${colorTable.ui.playerInfoBackground} rounded-lg mb-4`}
+              className={`flex items-center justify-between gap-3 xl:p-2 p-1 ${colorTable.ui.playerInfoBackground} rounded-lg mb-4`}
             >
               <div className="player-identity">
-                <div className="font-bold text-lg">{opponent?.name ?? '対戦相手 検索中…'}</div>
-                {/* <div className={`text-sm ${colorTable.ui.text.secondary}`}>オンライン</div> */}
+                <Button onClick={handleFullScreen} size="sm" className="py-2 my-1">
+                  全画面にする
+                </Button>
+                <div className="font-bold text-lg whitespace-nowrap text-ellipsis">
+                  {opponent?.name ?? '対戦相手 検索中…'}
+                </div>
+                {opponent?.life !== undefined && (
+                  <LifeView current={opponent.life.current} max={opponent.life.max} />
+                )}
               </div>
               {/* 対戦相手の手札エリア */}
               <div className="flex justify-center gap-2">
@@ -208,8 +269,8 @@ export const Game = ({ id }: RoomProps) => {
                       className="flex justify-center items-center cursor-pointer w-full h-full"
                       onClick={() => {
                         openCardsDialog(state => {
-                          const trash = (state.players?.[oppenentId]?.trash ?? []) as ICard[];
-                          const deleted = (state.players?.[oppenentId]?.delete ?? []) as ICard[];
+                          const trash = (state.players?.[opponentId]?.trash ?? []) as ICard[];
+                          const deleted = (state.players?.[opponentId]?.delete ?? []) as ICard[];
                           return [
                             ...[...trash].reverse(),
                             ...deleted.map(card => ({ ...card, deleted: true })),
@@ -222,13 +283,12 @@ export const Game = ({ id }: RoomProps) => {
                   </CardsCountView>
                 )}
               </div>
-              {opponent?.cp !== undefined && (
-                <CPView current={opponent.cp.current} max={opponent.cp.max} />
-              )}
-              <PurpleGaugeView max={5} current={opponent?.purple} />
-              {opponent?.life !== undefined && (
-                <LifeView current={opponent.life.current} max={opponent.life.max} />
-              )}
+              <div className="flex flex-col gap-4">
+                {opponent?.cp !== undefined && (
+                  <CPView current={opponent.cp.current} max={opponent.cp.max} />
+                )}
+                <PurpleGaugeView max={5} current={opponent?.purple} />
+              </div>
             </div>
           </div>
 
@@ -237,7 +297,7 @@ export const Game = ({ id }: RoomProps) => {
             className={`relative flex flex-col p-x-6 ${colorTable.ui.fieldBackground} rounded-lg my-4`}
           >
             {/* 対戦相手のフィールド */}
-            <Field playerId={oppenentId} isOwnField={false} />
+            <Field playerId={opponentId} isOwnField={false} />
             <div className={`border-b border-dashed ${colorTable.ui.borderDashed} h-1`} />
             {/* 自分のフィールド */}
             <MyFieldWrapper>

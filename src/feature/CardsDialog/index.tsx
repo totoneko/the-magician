@@ -46,9 +46,15 @@ export const CardsDialog = () => {
   }, [cards, confirmSelection, count, selection]);
 
   // Handle dialog opening - initialize the timer only when dialog opens
+  // cardsを依存配列に追加することで、バッチ処理で isOpen が false にならなくても
+  // 新しいダイアログが開かれた時にタイマーをリセットする
   useEffect(() => {
-    if (isOpen && isSelector && timeLimit && !startTimeRef.current) {
-      // Only increment the animation key when the dialog first opens with a time limit
+    if (isOpen && isSelector && timeLimit) {
+      // 既存のタイマーをクリアして新しいタイマーをセット
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
       animationKey.current += 1;
       startTimeRef.current = Date.now();
 
@@ -75,7 +81,7 @@ export const CardsDialog = () => {
         timeoutRef.current = null;
       }
     };
-  }, [isOpen, isSelector, timeLimit, handleTimeExpiration]);
+  }, [isOpen, isSelector, timeLimit, handleTimeExpiration, cards]);
 
   // Handle animation when the dialog opens/closes
   useEffect(() => {
